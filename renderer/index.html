@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>MC 工具箱</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">MC</div>
+        <div class="brand-text">
+          <strong>MC 工具箱</strong>
+          <span>Java 版助手</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-tab="versions"><span class="ico">🎮</span>版本下载与启动</button>
+        <button class="nav-item" data-tab="serverhost"><span class="ico">⚡</span>一键开服</button>
+        <button class="nav-item" data-tab="mods"><span class="ico">📦</span>资源下载</button>
+        <button class="nav-item" data-tab="remote"><span class="ico">🌐</span>异地联机</button>
+        <button class="nav-item" data-tab="crash"><span class="ico">🧾</span>崩溃日志解析</button>
+        <button class="nav-item" data-tab="server"><span class="ico">📡</span>服务器查询</button>
+        <button class="nav-item" data-tab="image"><span class="ico">🖼️</span>JPG 转 PNG</button>
+        <button class="nav-item" data-tab="blueprint"><span class="ico">🧱</span>蓝图 3D 预览</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <button id="btnSettings" class="ghost-btn small">⚙ 设置</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- ============ 1. 崩溃日志 ============ -->
+      <section class="panel" id="panel-crash">
+        <header class="panel-head">
+          <h1>崩溃日志解析</h1>
+          <p>导入 latest.log / crash-report，自动判断崩溃原因并给出优化建议</p>
+        </header>
+
+        <div class="row">
+          <button class="primary" id="crashPick">选择日志文件</button>
+          <button class="ghost" id="crashRecent">扫描最近日志</button>
+          <span class="hint" id="crashFile">未选择文件</span>
+        </div>
+
+        <div class="card" id="crashResult" style="display:none">
+          <div class="verdict" id="crashVerdict"></div>
+          <div class="env-grid" id="crashEnv"></div>
+        </div>
+
+        <div id="crashHits"></div>
+
+        <div class="card" id="crashStackCard" style="display:none">
+          <h3>关键堆栈</h3>
+          <pre class="code" id="crashStack"></pre>
+        </div>
+
+        <div class="card" id="crashRecentCard" style="display:none">
+          <h3>最近的日志 / 崩溃报告</h3>
+          <div class="list" id="crashRecentList"></div>
+        </div>
+      </section>
+
+      <!-- ============ 2. 服务器查询 ============ -->
+      <section class="panel" id="panel-server">
+        <header class="panel-head">
+          <h1>服务器查询</h1>
+          <p>输入服务器 IP（可带端口），查询在线人数、版本、MOTD 与延迟</p>
+        </header>
+
+        <div class="row">
+          <input id="serverHost" class="input grow" placeholder="例如 play.hypixel.net 或 mc.example.com:25565" value="mc.hypixel.net" />
+          <button class="primary" id="serverPing">查询</button>
+        </div>
+
+        <div class="card" id="serverResult" style="display:none">
+          <div class="server-top">
+            <img id="serverIcon" class="server-icon" alt="" />
+            <div class="grow">
+              <div class="motd" id="serverMotd"></div>
+              <div class="server-meta" id="serverMeta"></div>
+            </div>
+          </div>
+          <div class="stat-grid" id="serverStats"></div>
+          <h3 id="playerTitle" style="display:none">在线玩家</h3>
+          <div class="chips" id="serverPlayers"></div>
+        </div>
+        <div class="alert" id="serverError" style="display:none"></div>
+      </section>
+
+      <!-- ============ 3. 图片转换 ============ -->
+      <section class="panel" id="panel-image">
+        <header class="panel-head">
+          <h1>JPG 转 PNG</h1>
+          <p>批量把 JPG/JPEG 转成 PNG，可自定义输出目录</p>
+        </header>
+
+        <div class="row">
+          <button class="primary" id="imgPick">添加 JPG 图片</button>
+          <button class="ghost" id="imgOutDir">选择输出目录</button>
+          <button class="ghost" id="imgClear">清空</button>
+        </div>
+        <div class="hint" id="imgOutHint">输出目录：与源文件相同</div>
+
+        <div class="list" id="imgList"></div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="primary" id="imgConvert" disabled>开始转换</button>
+          <span class="hint" id="imgStatus"></span>
+        </div>
+      </section>
+
+      <!-- ============ 4. 蓝图预览 ============ -->
+      <section class="panel" id="panel-blueprint">
+        <header class="panel-head">
+          <h1>蓝图 3D 预览</h1>
+          <p>导入 .litematic，鼠标左键拖拽旋转，滚轮缩放，右键平移</p>
+        </header>
+
+        <div class="row">
+          <button class="primary" id="bpPick">选择 .litematic</button>
+          <button class="ghost" id="bpReset">重置视角</button>
+          <button class="ghost" id="bpRotX">↻ 绕X轴 90°</button>
+          <button class="ghost" id="bpRotY">↻ 绕Y轴 90°</button>
+          <span class="hint" id="bpFile">未加载蓝图</span>
+        </div>
+
+        <div class="bp-wrap">
+          <canvas id="bpCanvas"></canvas>
+          <div class="bp-overlay" id="bpInfo">未加载</div>
+        </div>
+        <div class="chips" id="bpPalette"></div>
+      </section>
+
+      <!-- ============ 5. 版本下载与启动 ============ -->
+      <section class="panel active" id="panel-versions">
+        <header class="panel-head">
+          <h1>版本下载与启动</h1>
+          <p>检测已安装的版本并直接启动；也可以从 Mojang 官方源下载安装任意版本</p>
+        </header>
+
+        <div class="row">
+          <input id="mcFolder" class="input grow" placeholder=".minecraft 文件夹路径" />
+          <button class="ghost" id="mcFind">自动查找</button>
+          <button class="ghost" id="mcPick">浏览…</button>
+          <button class="primary" id="mcScan">扫描已安装</button>
+        </div>
+
+        <div class="card" id="modsPathCard" style="display:none">
+          <h3>📁 Mod 文件夹（把 mod 的 .jar 放进这里）</h3>
+          <div class="row" style="margin:0 0 6px">
+            <input id="modsPath" class="input grow" placeholder="mods 文件夹路径" />
+            <button class="ghost" id="modsPathPick">选择其他目录…</button>
+            <button class="ghost" id="modsPathOpen">打开文件夹</button>
+            <button class="ghost" id="modsPathCopy">复制路径</button>
+          </div>
+          <p class="hint" id="modsPathHint"></p>
+        </div>
+
+        <div class="card" id="mcFolders" style="display:none">
+          <h3>找到的游戏目录（点击选用）</h3>
+          <div class="list" id="mcFolderList"></div>
+        </div>
+
+        <div class="subtabs" id="verTabs">
+          <button class="subtab active" data-sub="installed">已安装版本</button>
+          <button class="subtab" data-sub="download">下载新版本</button>
+        </div>
+
+        <div id="sub-installed">
+          <div class="card" id="mcSummary" style="display:none">
+            <div class="stat-grid" id="mcStats"></div>
+          </div>
+
+          <div class="account-bar">
+            <img class="acc-avatar" id="accAvatar" alt="" style="display:none" />
+            <div>
+              <div class="acc-name" id="accName">离线模式（游客）</div>
+              <div class="acc-sub" id="accSub">用用户名直接进游戏；想要正版皮肤 / 联机验证请点右边登录</div>
+            </div>
+            <div style="margin-left:auto; display:flex; gap:8px">
+              <button class="primary" id="accLogin">正版登录（微软）</button>
+              <button class="ghost" id="accLogout" style="display:none">退出登录</button>
+            </div>
+          </div>
+
+          <div class="launch-bar" id="launchBar" style="display:none">
+            <label>Java
+              <select id="mcJava" class="input" style="max-width:320px"></select>
+            </label>
+            <label>用户名
+              <input id="mcUser" class="input" value="Player" style="width:120px" />
+            </label>
+            <label>内存(MB)
+              <input id="mcMem" class="input" type="number" value="4096" style="width:88px" />
+            </label>
+            <button class="primary" id="mcLaunch" disabled>启动选中版本</button>
+            <button class="ghost" id="mcRepair" disabled>补全缺失文件</button>
+            <button class="ghost" id="mcJavaRefresh">刷新 Java</button>
+          </div>
+
+          <div class="row" id="assetsRow" style="display:none">
+            <span class="hint" style="white-space:nowrap">资源目录 assets：</span>
+            <input id="mcAssets" class="input grow" placeholder="留空 = 用当前 .minecraft\assets；缺资源时可指向另一个完整游戏目录" />
+            <button class="ghost" id="mcAssetsPick">浏览…</button>
+            <button class="ghost" id="mcAssetsAuto">自动找</button>
+          </div>
+
+          <div class="row" id="verFilterRow" style="display:none">
+            <label class="hint" style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="verOnlyLaunchable" /> 只显示完全可启动的版本
+            </label>
+            <span class="hint" id="verFilterHint"></span>
+          </div>
+
+          <div class="list" id="versionList"></div>
+        </div>
+
+        <div id="sub-download" style="display:none">
+          <div class="row">
+            <input id="dlSearch" class="input grow" placeholder="搜索版本号，例如 1.21.11 / 26.3" />
+            <select id="dlType" class="input" style="width:140px">
+              <option value="release">正式版</option>
+              <option value="snapshot">预览版/快照</option>
+              <option value="old">远古版本</option>
+              <option value="all">全部</option>
+            </select>
+            <button class="primary" id="dlLoad">获取官方清单</button>
+            <button class="ghost" id="dlRefresh">强制刷新</button>
+          </div>
+          <div class="hint" id="dlStatus">点「获取官方清单」从 Mojang 拉取全部可下载版本</div>
+          <div class="list" id="dlList"></div>
+        </div>
+
+        <div class="card" id="launchStatusCard" style="display:none">
+          <h3 id="launchStatusTitle">进度 / 启动状态</h3>
+          <div id="launchStatus" class="hint" style="margin-bottom:10px; line-height:1.7"></div>
+          <pre class="code" id="gameLog" style="display:none; max-height:250px"></pre>
+        </div>
+      </section>
+
+      <!-- ============ 6. Mod 下载 ============ -->
+      <section class="panel" id="panel-mods">
+        <header class="panel-head">
+          <h1>资源下载</h1>
+          <p>从 Modrinth / CurseForge 搜索并下载 mod、整合包、资源包、光影包、数据包</p>
+        </header>
+
+        <div class="kind-tabs" id="kindTabs">
+          <button class="kind-tab active" data-kind="mod">🧩 Mod</button>
+          <button class="kind-tab" data-kind="modpack">📚 整合包</button>
+          <button class="kind-tab" data-kind="resourcepack">🎨 资源包</button>
+          <button class="kind-tab" data-kind="shader">✨ 光影包</button>
+          <button class="kind-tab" data-kind="datapack">🗂️ 数据包</button>
+        </div>
+        <div class="hint" id="kindTip" style="margin-bottom:10px"></div>
+
+        <div class="row">
+          <select id="modSource" class="input" style="width:140px">
+            <option value="modrinth">Modrinth</option>
+            <option value="curseforge">CurseForge</option>
+          </select>
+          <input id="modQuery" class="input grow" placeholder="搜索 mod，例如 sodium / jei" />
+          <input id="modGameVersion" class="input" placeholder="1.21.1" style="width:110px" />
+          <select id="modLoader" class="input" style="width:120px">
+            <option value="">全部加载器</option>
+            <option value="fabric">Fabric</option>
+            <option value="forge">Forge</option>
+            <option value="neoforge">NeoForge</option>
+            <option value="quilt">Quilt</option>
+          </select>
+          <button class="primary" id="modSearch">搜索</button>
+        </div>
+
+        <div class="row">
+          <span class="hint" style="white-space:nowrap">下载到：</span>
+          <input id="modsDir" class="input grow" placeholder="mods 文件夹路径（默认 .minecraft\mods）" />
+          <button class="ghost" id="modsPickDir">浏览…</button>
+        </div>
+        <div class="row">
+          <span class="hint" style="white-space:nowrap">安装到已装版本：</span>
+          <select id="modTarget" class="input grow" style="max-width:580px">
+            <option value="">（不指定，就用上面的「下载到」文件夹）</option>
+          </select>
+          <button class="ghost" id="modDetect">自动检测</button>
+        </div>
+        <div class="hint" id="modTargetHint"></div>
+        <div class="hint" id="modStatus"></div>
+
+        <div class="mod-grid" id="modResults"></div>
+      </section>
+
+      <!-- ============ 一键开服 ============ -->
+      <section class="panel" id="panel-serverhost">
+        <header class="panel-head">
+          <h1>一键开服</h1>
+          <p>创建 Paper / Fabric / 原版服务器 —— 点一下就能开，自动生成联机地址发给朋友</p>
+        </header>
+
+        <div class="card">
+          <h3>① 新建服务器</h3>
+          <div class="row">
+            <select id="srvType" class="input" style="width:210px">
+              <option value="paper">Paper（插件服，最推荐）</option>
+              <option value="fabric">Fabric（模组服）</option>
+              <option value="vanilla">原版（Vanilla）</option>
+            </select>
+            <select id="srvVersion" class="input" style="width:150px"></select>
+            <input id="srvName" class="input grow" placeholder="服务器名（同时作为文件夹名）" />
+          </div>
+          <div class="row">
+            <label class="hint">内存(MB) <input id="srvMem" class="input" type="number" value="4096" style="width:92px" /></label>
+            <label class="hint">端口 <input id="srvPort" class="input" type="number" value="25565" style="width:92px" /></label>
+            <label class="hint">MOTD <input id="srvMotd" class="input" style="width:230px" placeholder="服务器列表里显示的名字" /></label>
+            <label class="hint" style="display:flex;align-items:center;gap:5px">
+              <input type="checkbox" id="srvOnlineMode" checked /> 正版验证
+            </label>
+          </div>
+          <div class="row">
+            <span class="hint" style="white-space:nowrap">服务器目录：</span>
+            <input id="srvRoot" class="input grow" />
+            <button class="ghost" id="srvPickRoot">浏览…</button>
+            <button class="ghost" id="srvLoadVersions">获取可用版本</button>
+            <button class="primary" id="srvCreate">创建服务器</button>
+          </div>
+          <div class="hint" id="srvCreateHint">点「获取可用版本」拉取 Paper 支持的版本列表；也可以直接手填版本号</div>
+        </div>
+
+        <div class="list" id="srvList"></div>
+
+        <div id="srvCtrlCard" style="display:none">
+          <div class="card">
+            <h3 id="srvCtrlTitle">服务器控制台</h3>
+            <div class="row" id="srvCtrlBar" style="margin-bottom:8px"></div>
+            <div class="card" style="background:linear-gradient(135deg,#f7fbff,#eef7ff);margin:0 0 10px">
+              <h3 style="margin:0 0 6px">② 联机地址（复制给朋友）</h3>
+              <div class="row" style="margin:0">
+                <input id="srvAddr" class="input grow" readonly placeholder="服务器启动后自动生成" />
+                <button class="ghost" id="srvAddrCopy">复制</button>
+                <button class="ghost" id="srvAddrRefresh">刷新地址</button>
+              </div>
+              <div class="hint" id="srvAddrHint"></div>
+            </div>
+            <div class="card" style="background:linear-gradient(135deg,#fff8f0,#ffeee0);margin:0 0 10px">
+              <h3 style="margin:0 0 6px">③ 让朋友直接连（他们什么都不用装）</h3>
+              <div class="hint" style="margin-bottom:8px">
+                用内网穿透把服务器公开到公网 —— 朋友只要在「多人游戏 → 直接连接」里输入地址就能进，不需要装 Radmin / ZeroTier。<br>
+                默认用 bore：不用注册、不用认领、点一下就给地址（走公共免费服务器，速度一般）。playit.gg 更稳定但需要装它自己的客户端并在网页认领。
+              </div>
+              <div class="row" style="margin:0 0 8px">
+                <select id="srvTunnel" class="input" style="width:230px"></select>
+                <button class="primary" id="srvTunnelStart">公开服务器</button>
+                <button class="ghost" id="srvTunnelStop">停止公开</button>
+              </div>
+              <div class="row" style="margin:0">
+                <input id="srvPublicAddr" class="input grow" placeholder="公开成功后自动显示；也可以把 playit 网页上给的地址粘到这里" />
+                <button class="ghost" id="srvPublicCopy">复制</button>
+              </div>
+              <div class="hint">
+                如果没自动识别出来：去 playit.gg 网页（或 ngrok 后台）复制给你的地址，粘贴到上面的框里也一样能用。
+              </div>
+              <div class="hint" id="srvTunnelHint"></div>
+            </div>
+            <pre class="code" id="srvConsole" style="max-height:340px"></pre>
+            <div class="row">
+              <input id="srvCmd" class="input grow" placeholder="输入服务器命令，例如 list / op 玩家名 / stop" />
+              <button class="primary" id="srvCmdSend">发送</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 7. 异地联机 ============ -->
+      <section class="panel" id="panel-remote">
+        <header class="panel-head">
+          <h1>异地联机</h1>
+          <p>和朋友在不同网络 / 不同城市也能进同一个世界 —— 不需要进路由器做端口映射</p>
+        </header>
+
+        <div class="subtabs" id="remoteTabs">
+          <button class="subtab active" data-rtab="host">🏠 我是房主</button>
+          <button class="subtab" data-rtab="client">🎯 我是玩家</button>
+        </div>
+
+        <!-- ========== 房主 ========== -->
+        <div id="rtab-host">
+          <div class="card">
+            <h3>第一步 · 选择联机方式</h3>
+            <div class="row">
+              <select id="rmMode" class="input" style="width:420px">
+                <option value="lan">A. 虚拟组网（Radmin / ZeroTier / Tailscale）—— 最稳，延迟低</option>
+                <option value="tunnel">B. 内网穿透（playit / ngrok / frp）—— 朋友什么都不用装</option>
+              </select>
+              <button class="ghost" id="rmRefreshNet">重新检测环境</button>
+            </div>
+            <div class="hint" id="rmModeHint"></div>
+          </div>
+
+          <!-- A：虚拟组网 -->
+          <div id="rmLanBox">
+            <div class="card">
+              <h3>第二步 · 虚拟组网状态</h3>
+              <div class="hint" style="margin-bottom:8px">
+                下面三种工具任选一种就行（你和朋友必须用同一种）。带 ✅ 的是你电脑上已经装好的，优先用那个。
+              </div>
+              <div id="rmVpnList"></div>
+            </div>
+
+            <div class="card">
+              <h3>📖 照着做就行（步骤）</h3>
+              <div id="rmGuide"></div>
+            </div>
+
+            <div class="card">
+              <h3>ZeroTier · 加入网络</h3>
+              <div class="hint" style="margin-bottom:8px">
+                Network ID 是什么、去哪拿？<br>
+                它不是账号也不是密码。你要先去 my.zerotier.com 免费注册，点「Create A Network」自己创建一个虚拟局域网，网站会分给这个网络一串 16 位十六进制编号 —— 那就是 Network ID。
+              </div>
+              <div class="row">
+                <button class="ghost" id="rmZtSite">① 打开 my.zerotier.com 创建网络</button>
+                <button class="ghost" id="rmZtAuth">② 去后台授权设备</button>
+              </div>
+              <div class="row">
+                <input id="rmZtId" class="input grow" placeholder="把网站给你的 16 位编号粘到这里，例如 8056c2e21c000001" />
+                <button class="primary" id="rmZtJoin">③ 加入网络</button>
+              </div>
+              <div class="hint" id="rmZtHint"></div>
+            </div>
+
+            <div class="card">
+              <h3>Tailscale · 安装 / 启动 / 登录</h3>
+              <div class="hint" style="margin-bottom:8px" id="rmTsState"></div>
+              <div class="row">
+                <button class="primary" id="rmTsInstall">下载并安装 Tailscale</button>
+                <button class="ghost" id="rmTsUp">启动并登录</button>
+                <span class="hint" id="rmToolHint"></span>
+              </div>
+              <div class="hint">
+                必须先装客户端 + 在浏览器里登录成功，Tailscale 才会分配 100.x.x.x 的虚拟 IP；
+                没装就点「启动并登录」就会提示「未检测到 Tailscale」。
+              </div>
+            </div>
+          </div>
+
+          <!-- B：内网穿透 -->
+          <div id="rmTunnelBox" style="display:none">
+            <div class="card">
+              <h3>穿透工具</h3>
+              <div id="rmTunnelList"></div>
+            </div>
+            <div class="card">
+              <h3>参数</h3>
+              <div class="row">
+                <input id="rmToken" class="input grow" placeholder="ngrok auth token（用 ngrok 时必填）" />
+                <input id="rmFrpCfg" class="input grow" placeholder="frpc 配置文件路径（.toml / .ini）" />
+                <button class="ghost" id="rmPickCfg">选择配置</button>
+              </div>
+              <div class="row">
+                <button class="primary" id="rmTunnelStart">启动穿透</button>
+                <button class="ghost" id="rmTunnelStop">停止</button>
+                <span class="hint" id="rmTunnelHint"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>第三步 · 读取 MC 局域网端口</h3>
+            <div class="row">
+              <input id="rmPort" class="input" type="number" style="width:130px" placeholder="端口" />
+              <button class="ghost" id="rmReadPort">从游戏日志读取</button>
+              <button class="ghost" id="rmWatchPort">持续监听</button>
+              <span class="hint" id="rmPortHint">先在游戏里按 Esc → 「对局域网开放」，端口每次都不一样，这里能自动读到</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>第四步 · 生成地址发给朋友</h3>
+            <div class="row">
+              <input id="rmAddr" class="input grow" readonly placeholder="端口填好后点「生成」" />
+              <button class="primary" id="rmBuild">生成</button>
+              <button class="ghost" id="rmCopy">复制</button>
+            </div>
+            <pre class="code" id="rmShare" style="display:none; max-height:180px"></pre>
+          </div>
+
+          <div class="card">
+            <h3>防火墙检查（最常见的坑）</h3>
+            <div id="rmFw" class="hint">点右边「检查」看看你启动游戏用的 Java 有没有被防火墙放行</div>
+            <div class="row">
+              <button class="ghost" id="rmFwCheck">检查</button>
+              <button class="primary" id="rmFwFix" style="display:none">一键放行（会弹 UAC）</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== 玩家 ========== -->
+        <div id="rtab-client" style="display:none">
+          <div class="card">
+            <h3>第一步 · 你需要做什么？（按房主用的方式选）</h3>
+            <div class="hint" style="margin-bottom:10px">
+              不知道房主用的哪种？先把地址粘到下面点「测试连接」，工具箱会自动判断并跳到对应的说明。
+            </div>
+            <div class="subtabs" id="playerGuides" style="margin-bottom:10px">
+              <button class="subtab active" data-pg="tunnel">内网穿透（你什么都不用装）</button>
+              <button class="subtab" data-pg="radmin">Radmin VPN</button>
+              <button class="subtab" data-pg="zerotier">ZeroTier</button>
+              <button class="subtab" data-pg="tailscale">Tailscale</button>
+            </div>
+            <div class="hint" id="pgHint"></div>
+            <div id="pgBody"></div>
+          </div>
+
+          <div class="card">
+            <h3>第二步 · 粘贴房主给你的地址并测试</h3>
+            <textarea id="clText" class="input" rows="5" style="width:100%; font-family:Consolas,monospace; resize:vertical" placeholder="把房主发的整段内容粘进来，例如：&#10;26.178.253.189:54321&#10;版本: 1.21.11&#10;Mods(3): sodium.jar, lithium.jar"></textarea>
+            <div class="row">
+              <button class="primary" id="clTest">测试连接</button>
+              <button class="ghost" id="clParse">只解析</button>
+            </div>
+            <div id="clResult"></div>
+          </div>
+
+          <div class="card">
+            <h3>版本 / Mod 一致性检查</h3>
+            <div class="row">
+              <select id="clVersion" class="input" style="max-width:340px"></select>
+              <button class="primary" id="clCompare">和我本地对比</button>
+            </div>
+            <div id="clCompareResult"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>状态 / 日志</h3>
+          <pre class="code" id="rmLog" style="max-height:220px"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div class="modal-mask" id="modalMask" style="display:none">
+    <div class="modal" style="max-height:86vh; overflow:auto">
+      <h2>设置</h2>
+
+      <h3 class="sec-title">语言 / Language</h3>
+      <div class="row" style="margin:0 0 14px">
+        <select id="cfgLang" class="input" style="width:230px">
+          <option value="zh">中文（Chinese）</option>
+          <option value="en">English</option>
+        </select>
+        <span class="hint">切换后立即生效，重启后保持 / Applies immediately and is remembered</span>
+      </div>
+      <hr class="sep" />
+
+      <label class="field">
+        <span>CurseForge API Key</span>
+        <input id="cfgCfKey" class="input" placeholder="没有就留空（CurseForge 官方要求 API Key）" />
+      </label>
+      <label class="field">
+        <span>默认 .minecraft 文件夹</span>
+        <input id="cfgMcFolder" class="input" placeholder="C:\Users\你\AppData\Roaming\.minecraft" />
+      </label>
+      <label class="field">
+        <span>游戏用户名（离线模式）</span>
+        <input id="cfgUser" class="input" placeholder="Player" />
+      </label>
+      <p class="hint" style="margin:0">申请 CurseForge Key：console.curseforge.com → API Keys</p>
+
+      <hr class="sep" />
+      <h3 class="sec-title">启动与窗口</h3>
+
+      <label class="switch-row">
+        <input type="checkbox" id="cfgAutoStart" />
+        <span>
+          <b>开机自动启动</b>
+          <em>开机后自动打开 MC 工具箱（默认关闭）</em>
+        </span>
+      </label>
+
+      <label class="switch-row">
+        <input type="checkbox" id="cfgTray" />
+        <span>
+          <b>关闭后最小化到托盘</b>
+          <em>点右上角 × 时不退出，收进右下角托盘；双击托盘图标可恢复（默认关闭）</em>
+        </span>
+      </label>
+
+      <hr class="sep" />
+      <h3 class="sec-title">高级</h3>
+      <label class="field">
+        <span>微软登录 Client ID</span>
+        <input id="cfgClientId" class="input" placeholder="留空则用默认值" />
+      </label>
+      <p class="hint" style="margin:0">只有在默认值登录失败时才需要改（要填你自己在 Azure 注册的应用 ID）</p>
+
+      <hr class="sep" />
+      <h3 class="sec-title">❤️ 为爱发电</h3>
+      <p class="hint" style="margin:0 0 10px">如果这个工具箱帮到你了，可以请作者喝杯奶茶（完全自愿，不影响任何功能）</p>
+      <div class="donate-box">
+        <img src="assets/donate.jpg" alt="微信收款码" />
+        <div class="hint">微信扫码 · hehehegood6723</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="ghost" id="cfgCancel">取消</button>
+        <button class="primary" id="cfgSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

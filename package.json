@@ -1,0 +1,39 @@
+{
+  "name": "mc-toolbox",
+  "version": "1.5.0",
+  "description": "All-in-one toolbox for Minecraft Java Edition: version manager & launcher, Microsoft sign-in, one-click server hosting, mod / modpack downloads, remote play, crash log analyzer and litematic 3D viewer. Bilingual (中文 / English).",
+  "main": "main.js",
+  "author": "hehehegood6723",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hehehegood6723/MCToolbox.git"
+  },
+  "homepage": "https://github.com/hehehegood6723/MCToolbox#readme",
+  "bugs": {
+    "url": "https://github.com/hehehegood6723/MCToolbox/issues"
+  },
+  "keywords": [
+    "minecraft",
+    "launcher",
+    "electron",
+    "paper",
+    "fabric",
+    "modrinth",
+    "curseforge",
+    "litematic",
+    "minecraft-server",
+    "zh-cn"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/run-tests.js",
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1"
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1"
+  }
+}

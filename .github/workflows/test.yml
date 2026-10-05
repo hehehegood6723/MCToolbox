@@ -1,0 +1,35 @@
+name: test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    # 这是个 Windows 桌面工具，逻辑大量依赖 Windows 路径与注册表，所以在 windows 上跑
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check all sources
+        shell: pwsh
+        run: |
+          $fail = 0
+          Get-ChildItem src, renderer -Recurse -Include *.js |
+            Where-Object { $_.FullName -notmatch 'vendor' } |
+            ForEach-Object {
+              node --check $_.FullName
+              if ($LASTEXITCODE -ne 0) { Write-Host "FAILED: $($_.Name)"; $fail = 1 }
+            }
+          node --check main.js; if ($LASTEXITCODE -ne 0) { $fail = 1 }
+          node --check preload.js; if ($LASTEXITCODE -ne 0) { $fail = 1 }
+          if ($fail -ne 0) { exit 1 }
+
+      - name: Run offline test suite
+        run: node test/run-tests.js
